@@ -1,0 +1,308 @@
+#include "BTree.h"
+
+bool BTree::insert(int key, int id)
+{
+	if (isEmpty)
+	{
+		BNode* L = new BNode;
+		L->clear();
+		L->setLeaf();
+		L->insert(key);
+		isEmpty = 0;
+		root = L;
+	}
+	else
+	{
+		BNode* L = find(root, key);
+
+		if (L->getSize() < N - 1)
+		{
+			insert_in_leaf(L, key, id);
+		}
+		else
+		{
+			BNode* G = new BNode;
+			BNode* Tmp = new BNode(L);
+			insert_in_leaf(Tmp, key, id);
+			L->clear();
+			G->setLeaf();
+			G->nex = L->nex;
+			L->nex = G;
+			int SIZE = N;
+			int mid = SIZE / 2;
+			for (int i = 0; i < mid; i++)L->insert(Tmp->keys[i]);
+			for (int i = mid; i < SIZE; i++)G->insert(Tmp->keys[i]);
+
+			int Minkey = G->keys[0];
+
+			delete Tmp;
+			insert_in_parent(L, Minkey, G);
+		}
+	}
+
+	return true;
+}
+BNode* BTree::find(BNode* node, int  key)
+{
+	if (node->isLeaf())return node;
+
+	BNode* child = NULL;
+	int SIZE = node->getSize();
+	for (int i = 0; i < SIZE; i++)
+		if (key > node->keys[i]) { child = node->ptrs[i]; break; }
+	if (!child)child = node->ptrs[SIZE];
+	return find(child, key);
+}
+bool BTree::insert_in_leaf(BNode* L, int key, int id)
+{
+	int SIZE = L->getSize();
+	int pos = -1;
+	for (int i = 0; i < SIZE; i++)
+		if (L->keys[i] > key) { pos = i; break; }
+	if (pos == -1)pos = SIZE;
+	L->keys.insert(L->keys.begin() + pos, key);
+	/*Link* nid = new Link(id);
+
+	L->ids.insert(L->ids.begin() + pos, nid);
+	Link* pre = NULL, * nex = NULL;
+	if (pos == 0)pre = L->ids[0]->pre, nex = L->ids[0];
+	else pre = L->ids[pos - 1], nex = L->ids[pos - 1]->nex;
+	pre->nex = nid;
+	nex->pre = nid;
+	nid->pre = pre;
+	nid->nex = nex;*/
+	return true;
+}
+bool BTree::insert_in_parent(BNode* L, int key, BNode* G)
+{
+
+	if (L == root)
+	{
+		BNode* P = new BNode;
+		P->clear();
+		P->insert(key);
+		P->insert(L);
+		P->insert(G);
+		L->setParent(P);
+		G->setParent(P);
+		/*if (key == 3)
+		{
+			P->print();
+			printf("%d %d\n", P->keys.size(), P->ptrs.size());
+			printf("!\n");
+			root = P;
+			return 1;
+		}*/
+		root = P;
+	}
+	else
+	{
+		BNode* P = L->parent();
+		if (P->getSize() < N)
+		{
+			G->setParent(P);
+			int SIZE = P->ptrs.size();
+			int pos = -1;
+			for (int i = 0; i < SIZE; i++)
+				if (P->ptrs[i] == L) { pos = i; break; }
+			P->ptrs.insert(P->ptrs.begin() + pos + 1, G);
+			P->keys.insert(P->keys.begin() + pos, key);
+		}
+		else
+		{
+			G->setParent(P);
+			BNode* Tmp = new BNode(P);
+			int SIZE = Tmp->ptrs.size();
+			int pos = -1;
+			for (int i = 0; i < SIZE; i++)
+				if (Tmp->ptrs[i] == L) { pos = i; break; }
+			Tmp->ptrs.insert(Tmp->ptrs.begin() + pos + 1, G);
+			Tmp->keys.insert(Tmp->keys.begin() + pos, key);
+			P->clear();
+
+			BNode* H = new BNode();
+			H->clear();
+
+			int mid = SIZE / 2;
+			for (int i = 0; i < mid; i++)P->insert(Tmp->keys[i]);
+			for (int i = 0; i <= mid; i++)P->insert(Tmp->ptrs[i]);
+			for (int i = mid; i < SIZE; i++)H->insert(Tmp->keys[i]);
+			for (int i = mid + 1; i <= SIZE; i++)H->insert(Tmp->ptrs[i]);
+
+			int Minkey = H->keys[0];
+			insert_in_parent(P, Minkey, H);
+		}
+	}
+	return true;
+}
+bool BTree::Delete(int key, int id)
+{
+	BNode* L = find(root, key);
+	delete_entry(L, key);
+	return true;
+}
+bool BTree::swap_node(BNode* p1, BNode* p2)
+{
+	BNode* p3 = p1;
+	p1 = p2;
+	p2 = p3;
+	return true;
+}
+bool BTree::delete_key(BNode* L, int key, int off)
+{
+	auto it = L->keys.begin();
+	int pos = -1;
+	for (int i = 0; it != L->keys.end(); i++)
+	{
+		if (*it == key)
+		{
+			it = L->keys.erase(it);
+			pos = i;
+		}
+		else ++it;
+	}
+	L->size--;
+	if (!L->isLeaf())
+	{
+		BNode* tr = L->ptrs[pos + off];
+		auto it2 = L->ptrs.begin();
+		for (; it2 != L->ptrs.end();)
+		{
+			if (*it2 == tr)
+			{
+				it2 = L->ptrs.erase(it2);
+			}
+			else ++it2;
+		}
+	}
+
+	return (pos != -1);
+}
+bool BTree::delete_entry(BNode* L, int key)
+{
+	//delete key id from L
+	delete_key(L, key, 1);
+	if (root == L)
+	{
+		if (L->getSize() == 0)
+		{
+			BNode* G = L->ptrs[0];
+			root = G;
+			G->fa = NULL;
+			delete(L);
+		}
+	}
+	else if (L->getSize() < (N / 2))
+	{
+		BNode* G = L->nearNode();
+		int Midkey = L->midKey(G);
+		bool tag_pre = (G->keys[0] < L->keys[0]);
+		if (G->getSize() + L->getSize() < N)
+		{
+			if (tag_pre)swap_node(G, L), tag_pre = 0;
+			if (L->isLeaf())
+			{
+				int SIZE = G->keys.size();
+				for (int i = 0; i < SIZE; i++)L->insert(G->keys[i]);
+			}
+			else
+			{
+				int SIZE = G->keys.size();
+				L->insert(Midkey);
+				for (int i = 0; i < SIZE; i++)L->insert(G->keys[i]);
+				for (int i = 0; i <= SIZE; i++)L->insert(G->ptrs[i]);
+			}
+			delete_entry(L->parent(), Midkey);
+			delete G;
+		}
+		else
+		{
+			if (tag_pre)// G L
+			{
+				if (L->isLeaf())
+				{
+					int SIZE = G->getSize();
+					int stv, edv;
+					stv = L->keys[0];
+					edv = G->keys[SIZE - 1];
+					L->keys.insert(L->keys.begin(), edv);
+					delete_key(G, edv, 0);
+
+					replace(L->parent(), stv, edv);
+
+
+				}
+				else
+				{
+					int SIZE = G->getSize();
+					int edv;
+					edv = G->keys[SIZE - 1];
+					BNode* ntr = G->ptrs[SIZE];
+					L->keys.insert(L->keys.begin(), Midkey);
+					L->ptrs.insert(L->ptrs.begin(), ntr);
+					delete_key(G, edv, 1);
+
+					replace(L->parent(), Midkey, edv);
+				}
+			}
+			else// L G
+			{
+				if (L->isLeaf())
+				{
+					int SIZE = G->getSize();
+					int stv, edv;
+					stv = G->keys[0];
+					edv = G->keys[1];
+					L->keys.push_back(stv);
+					delete_key(G, stv, 0);
+
+					replace(L->parent(), stv, edv);
+				}
+				else
+				{
+					int SIZE = G->getSize();
+					int edv;
+					edv = G->keys[0];
+					BNode* ntr = G->ptrs[0];
+					L->keys.push_back(Midkey);
+					L->ptrs.push_back(ntr);
+
+					delete_key(G, edv, 0);
+
+					replace(L->parent(), Midkey, edv);
+				}
+			}
+		}
+
+	}
+	return true;
+}
+bool BTree::replace(BNode* L, int stv, int edv)
+{
+	int SIZE = L->getSize();
+	bool tag = 0;
+	for (int i = 0; i < SIZE; i++)
+		if (L->keys[i] == stv)
+		{
+			L->keys[i] = edv;
+			tag = 1; break;
+		}
+	return tag;
+}
+void BTree::printAll()
+{
+	printf("Print B+ tree:\n");
+	std::deque<BNode*>hh;
+	hh.clear();
+	hh.push_back(root);
+	while (!hh.empty())
+	{
+		BNode* L = hh.front();
+		hh.pop_front();
+		int SIZE = L->getSize();
+		for (int i = 0; i < SIZE; i++)printf("%d ", L->keys[i]);
+		if (!L->isLeaf())
+			for (int i = 0; i <= SIZE; i++)hh.push_back(L->ptrs[i]);
+		printf("\n");
+	}
+}
