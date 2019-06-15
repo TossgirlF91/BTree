@@ -26,7 +26,7 @@ BNode* BNode::parent()
 {
 	return fa;
 }
-void BNode::insert(int key)
+void BNode::insert(link key)
 {
 	keys.push_back(key);
 }
@@ -47,16 +47,15 @@ void BNode::insert(BNode* ntr)
 {
 	ptrs.push_back(ntr);
 }
-bool BNode::contain(int key)
+bool BNode::contain(link key)
 {
 	int tag = 0, SIZE = getSize();
 	for (int i = 0; i < SIZE; i++)
-		if (keys[i] == key)tag = 1;
+		if (keys[i].first == key.first || keys[i].second == key.second)tag = 1;
 	return tag;
 }
 int BNode::getSize()
 {
-	//return size;
 	return keys.size();
 }
 bool BNode::clear()
@@ -76,18 +75,13 @@ BNode* BNode::nearNode()
 	return p;
 }
 
-int BNode::midKey(BNode* G)
+link BNode::midKey(BNode* G)
 {
 	int SIZE = fa->getSize(), pos = -1;
 	for (int i = 0; i < SIZE; i++)
 		if (fa->ptrs[i] == G || fa->ptrs[i] == this) { pos = i; break; }
-	int value = fa->keys[pos];
+	link value = fa->keys[pos];
 	return value;
-}
-int BNode::lastvalue()
-{
-	int SIZE = keys.size();
-	return keys[SIZE];
 }
 void BNode::print()
 {
@@ -98,6 +92,6 @@ void BNode::print()
 	}
 	printf("Node:\n");
 	int SIZE = getSize();
-	for (int i = 0; i < SIZE; i++)printf("%d ", keys[i]);
+	for (int i = 0; i < SIZE; i++)printf("%d ", keys[i].first);
 	printf("\n\n");
 }

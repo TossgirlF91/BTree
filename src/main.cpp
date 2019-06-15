@@ -16,7 +16,7 @@ int main()
 
 	for (int i = 0; i < 15; i++)
 	{
-		P.Delete(15 - i, 0);
+		P.Delete(15 - i, i);
 		P.printAll();
 	}
 	return 0;

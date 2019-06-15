@@ -13,16 +13,17 @@ public:
 		root = NULL;
 		isEmpty = 1;
 	}
-	bool insert(int _key, int _id);
-	bool insert_in_leaf(BNode*, int, int);
-	BNode* find(BNode*, int);
-	bool insert_in_parent(BNode*, int, BNode*);
+	bool insert(int, int);
+	bool insert_in_leaf(BNode*, link);
+	BNode* find(BNode*, link);
+	bool insert_in_parent(BNode*, link, BNode*);
 	void printAll();
 	bool Delete(int, int);
-	bool delete_entry(BNode*, int);
-	bool delete_key(BNode*, int, int);
-	bool replace(BNode*, int, int);
-	bool swap_node(BNode*, BNode*);
+	bool delete_entry(BNode*, link);
+	bool delete_key(BNode*, link, int);
+	bool replace(BNode*, link, link);
+	bool swap_node(BNode**, BNode**);
+	int ask(int);
 
 private:
 

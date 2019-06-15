@@ -1,32 +1,33 @@
 #include "BTree.h"
 
-bool BTree::insert(int key, int id)
+bool BTree::insert(int _key, int _id)
 {
+	link val = std::make_pair(_key, _id);
 	if (isEmpty)
 	{
 		BNode* L = new BNode;
 		L->clear();
 		L->setLeaf();
-		L->insert(key);
+		L->insert(val);
 		isEmpty = 0;
 		root = L;
 	}
 	else
 	{
-		BNode* L = find(root, key);
-		if (L->contain(key))
+		BNode* L = find(root, val);
+		if (L->contain(val))
 		{
 			return false;
 		}
 		if (L->getSize() < N - 1)
 		{
-			insert_in_leaf(L, key, id);
+			insert_in_leaf(L, val);
 		}
 		else
 		{
 			BNode* G = new BNode;
 			BNode* Tmp = new BNode(L);
-			insert_in_leaf(Tmp, key, id);
+			insert_in_leaf(Tmp, val);
 			L->clear();
 			G->setLeaf();
 			G->nex = L->nex;
@@ -37,7 +38,7 @@ bool BTree::insert(int key, int id)
 			for (int i = 0; i < mid; i++)L->insert(Tmp->keys[i]);
 			for (int i = mid; i < SIZE; i++)G->insert(Tmp->keys[i]);
 
-			int Minkey = G->keys[0];
+			link Minkey = G->keys[0];
 
 			delete Tmp;
 			insert_in_parent(L, Minkey, G);
@@ -46,7 +47,7 @@ bool BTree::insert(int key, int id)
 
 	return true;
 }
-BNode* BTree::find(BNode* node, int  key)
+BNode* BTree::find(BNode* node, link  key)
 {
 	if (node->isLeaf())return node;
 
@@ -59,11 +60,9 @@ BNode* BTree::find(BNode* node, int  key)
 	{
 		child = node->ptrs[SIZE];
 	}
-
-
 	return find(child, key);
 }
-bool BTree::insert_in_leaf(BNode* L, int key, int id)
+bool BTree::insert_in_leaf(BNode* L, link key)
 {
 	int SIZE = L->getSize();
 	int pos = -1;
@@ -73,7 +72,7 @@ bool BTree::insert_in_leaf(BNode* L, int key, int id)
 	L->keys.insert(L->keys.begin() + pos, key);
 	return true;
 }
-bool BTree::insert_in_parent(BNode* L, int key, BNode* G)
+bool BTree::insert_in_parent(BNode* L, link key, BNode* G)
 {
 
 	if (L == root)
@@ -135,7 +134,7 @@ bool BTree::insert_in_parent(BNode* L, int key, BNode* G)
 				Tmp->ptrs[i]->setParent(P);
 			}
 
-			int Minkey = Tmp->keys[mid];
+			link Minkey = Tmp->keys[mid];
 			for (int i = mid + 1; i < SIZE; i++)H->insert(Tmp->keys[i]);
 			for (int i = mid + 1; i <= SIZE; i++)
 			{
@@ -148,14 +147,15 @@ bool BTree::insert_in_parent(BNode* L, int key, BNode* G)
 	}
 	return true;
 }
-bool BTree::Delete(int key, int id)
+bool BTree::Delete(int _key, int _id)
 {
-	BNode* L = find(root, key);
-	if (!L->contain(key))
+	link val = std::make_pair(_key, _id);
+	BNode* L = find(root, val);
+	if (!L->contain(val))
 	{
 		return false;
 	}
-	delete_entry(L, key);
+	delete_entry(L, val);
 	return true;
 }
 bool BTree::swap_node(BNode** p1, BNode** p2)
@@ -165,7 +165,7 @@ bool BTree::swap_node(BNode** p1, BNode** p2)
 	*p2 = p3;
 	return true;
 }
-bool BTree::delete_key(BNode* L, int key, int off)
+bool BTree::delete_key(BNode* L, link key, int off)
 {
 	auto it = L->keys.begin();
 	int pos = -1;
@@ -198,7 +198,7 @@ bool BTree::delete_key(BNode* L, int key, int off)
 	}
 	return (pos != -1);
 }
-bool BTree::delete_entry(BNode* L, int key)
+bool BTree::delete_entry(BNode* L, link key)
 {
 	delete_key(L, key, 1);
 	if (root == L)
@@ -222,7 +222,7 @@ bool BTree::delete_entry(BNode* L, int key)
 	{
 		BNode* G = L->nearNode();
 
-		int Midkey = L->midKey(G);
+		link Midkey = L->midKey(G);
 
 		bool tag_pre = (G->keys[0] < L->keys[0]);
 		if (G->getSize() + L->getSize() < N)
@@ -259,7 +259,7 @@ bool BTree::delete_entry(BNode* L, int key)
 				if (L->isLeaf())
 				{
 					int SIZE = G->getSize();
-					int stv, edv;
+					link stv, edv;
 					stv = L->keys[0];
 					edv = G->keys[SIZE - 1];
 					L->keys.insert(L->keys.begin(), edv);
@@ -269,7 +269,7 @@ bool BTree::delete_entry(BNode* L, int key)
 				else
 				{
 					int SIZE = G->getSize();
-					int edv;
+					link edv;
 					edv = G->keys[SIZE - 1];
 					BNode* ntr = G->ptrs[SIZE];
 					L->keys.insert(L->keys.begin(), Midkey);
@@ -285,7 +285,7 @@ bool BTree::delete_entry(BNode* L, int key)
 				if (L->isLeaf())
 				{
 					int SIZE = G->getSize();
-					int stv, edv;
+					link stv, edv;
 					stv = G->keys[0];
 					edv = G->keys[1];
 					L->keys.push_back(stv);
@@ -296,7 +296,7 @@ bool BTree::delete_entry(BNode* L, int key)
 				else
 				{
 					int SIZE = G->getSize();
-					int edv;
+					link edv;
 					edv = G->keys[0];
 					BNode* ntr = G->ptrs[0];
 					L->keys.push_back(Midkey);
@@ -313,7 +313,7 @@ bool BTree::delete_entry(BNode* L, int key)
 	}
 	return true;
 }
-bool BTree::replace(BNode* L, int stv, int edv)
+bool BTree::replace(BNode* L, link stv, link edv)
 {
 	int SIZE = L->getSize();
 	bool tag = 0;
@@ -324,6 +324,20 @@ bool BTree::replace(BNode* L, int stv, int edv)
 			tag = 1; break;
 		}
 	return tag;
+}
+int BTree::ask(int key)
+{
+	link val = std::make_pair(key, INF);
+
+	BNode* L = find(root, val);
+	int SIZE = L->getSize();
+	int ID = -1;
+	for (int i = 0; i < SIZE; i++)
+		if (L->keys[i].first == key)
+		{
+			ID = L->keys[i].second;
+		}
+	return ID;
 }
 void BTree::printAll()
 {
@@ -336,7 +350,7 @@ void BTree::printAll()
 		BNode* L = hh.front();
 		hh.pop_front();
 		int SIZE = L->getSize();
-		for (int i = 0; i < SIZE; i++)printf("%d ", L->keys[i]);
+		for (int i = 0; i < SIZE; i++)printf("%d ", L->keys[i].first);
 		if (!L->isLeaf())
 		{
 			if (L->ptrs.size() != SIZE + 1)
@@ -360,7 +374,11 @@ void BTree::printAll()
 		}
 		else
 		{
-
+			printf("  ids:");
+			for (int i = 0; i < SIZE; i++)
+			{
+				printf("%d ", L->keys[i].second);
+			}
 
 		}
 		printf("\n");
