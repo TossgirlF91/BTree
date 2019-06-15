@@ -5,18 +5,18 @@
 int main()
 {
 	//std::vector<int>a;
-	BTree P;
-	int val[] = { 4,3,2,1,5,6,7,8 };
-	int n = sizeof(val) / sizeof(int);
-	for (int i = 0; i < 15; i++)
+	BTree<std::string> P;
+	std::string val[] = { "a","aba","aab","cba","ZZZ" };
+	int n = 5;
+	for (int i = 0; i < n; i++)
 	{
-		P.insert(15 - i, i);
+		P.insert(val[i], i);
 		P.printAll();
 	}
 
-	for (int i = 0; i < 15; i++)
+	for (int i = 0; i < n; i++)
 	{
-		P.Delete(15 - i, i);
+		P.Delete(val[i], i);
 		P.printAll();
 	}
 	return 0;
