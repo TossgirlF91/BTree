@@ -8,12 +8,10 @@ BNode::BNode()
 {
 	keys.clear();
 	ptrs.clear();
-	size = 0;
 	leaf = 0;
 }
 BNode::BNode(BNode* L)
 {
-	size = L->size;
 	leaf = L->leaf;
 	keys.clear();
 	ptrs.clear();
@@ -31,7 +29,6 @@ BNode* BNode::parent()
 void BNode::insert(int key)
 {
 	keys.push_back(key);
-	size++;
 }
 void BNode::setParent(BNode* node)
 {
@@ -50,6 +47,13 @@ void BNode::insert(BNode* ntr)
 {
 	ptrs.push_back(ntr);
 }
+bool BNode::contain(int key)
+{
+	int tag = 0, SIZE = getSize();
+	for (int i = 0; i < SIZE; i++)
+		if (keys[i] == key)tag = 1;
+	return tag;
+}
 int BNode::getSize()
 {
 	//return size;
@@ -59,7 +63,6 @@ bool BNode::clear()
 {
 	keys.clear();
 	ptrs.clear();
-	size = 0;
 	return true;
 }
 BNode* BNode::nearNode()
@@ -88,6 +91,11 @@ int BNode::lastvalue()
 }
 void BNode::print()
 {
+	if (this == NULL)
+	{
+		printf("NULL point\n");
+		return;
+	}
 	printf("Node:\n");
 	int SIZE = getSize();
 	for (int i = 0; i < SIZE; i++)printf("%d ", keys[i]);

@@ -14,7 +14,10 @@ bool BTree::insert(int key, int id)
 	else
 	{
 		BNode* L = find(root, key);
-
+		if (L->contain(key))
+		{
+			return false;
+		}
 		if (L->getSize() < N - 1)
 		{
 			insert_in_leaf(L, key, id);
@@ -68,7 +71,6 @@ bool BTree::insert_in_leaf(BNode* L, int key, int id)
 		if (L->keys[i] > key) { pos = i; break; }
 	if (pos == -1)pos = SIZE;
 	L->keys.insert(L->keys.begin() + pos, key);
-
 	return true;
 }
 bool BTree::insert_in_parent(BNode* L, int key, BNode* G)
@@ -83,14 +85,6 @@ bool BTree::insert_in_parent(BNode* L, int key, BNode* G)
 		P->insert(G);
 		L->setParent(P);
 		G->setParent(P);
-		/*if (key == 3)
-		{
-			P->print();
-			printf("%d %d\n", P->keys.size(), P->ptrs.size());
-			printf("!\n");
-			root = P;
-			return 1;
-		}*/
 		root = P;
 	}
 	else
@@ -157,14 +151,18 @@ bool BTree::insert_in_parent(BNode* L, int key, BNode* G)
 bool BTree::Delete(int key, int id)
 {
 	BNode* L = find(root, key);
+	if (!L->contain(key))
+	{
+		return false;
+	}
 	delete_entry(L, key);
 	return true;
 }
-bool BTree::swap_node(BNode* p1, BNode* p2)
+bool BTree::swap_node(BNode** p1, BNode** p2)
 {
-	BNode* p3 = p1;
-	p1 = p2;
-	p2 = p3;
+	BNode* p3 = *p1;
+	*p1 = *p2;
+	*p2 = p3;
 	return true;
 }
 bool BTree::delete_key(BNode* L, int key, int off)
@@ -180,7 +178,11 @@ bool BTree::delete_key(BNode* L, int key, int off)
 		}
 		else ++it;
 	}
-	L->size--;
+	if (pos == -1)
+	{
+		printf("Error in delete key\n");
+		exit(0);
+	}
 	if (!L->isLeaf())
 	{
 		BNode* tr = L->ptrs[pos + off];
@@ -194,31 +196,42 @@ bool BTree::delete_key(BNode* L, int key, int off)
 			else ++it2;
 		}
 	}
-
 	return (pos != -1);
 }
 bool BTree::delete_entry(BNode* L, int key)
 {
-	//delete key id from L
 	delete_key(L, key, 1);
 	if (root == L)
 	{
 		if (L->getSize() == 0)
 		{
-			BNode* G = L->ptrs[0];
-			root = G;
-			G->fa = NULL;
+			if (L->ptrs.size() > 0)
+			{
+				BNode* G = L->ptrs[0];
+				root = G;
+				G->fa = NULL;
+			}
+			else
+			{
+				root = NULL;
+			}
 			delete(L);
 		}
 	}
 	else if (L->getSize() < (N / 2))
 	{
 		BNode* G = L->nearNode();
+
 		int Midkey = L->midKey(G);
+
 		bool tag_pre = (G->keys[0] < L->keys[0]);
 		if (G->getSize() + L->getSize() < N)
 		{
-			if (tag_pre)swap_node(G, L), tag_pre = 0;
+
+			if (tag_pre)swap_node(&G, &L), tag_pre = 0;
+
+
+
 			if (L->isLeaf())
 			{
 				int SIZE = G->keys.size();
@@ -229,8 +242,13 @@ bool BTree::delete_entry(BNode* L, int key)
 				int SIZE = G->keys.size();
 				L->insert(Midkey);
 				for (int i = 0; i < SIZE; i++)L->insert(G->keys[i]);
-				for (int i = 0; i <= SIZE; i++)L->insert(G->ptrs[i]);
+				for (int i = 0; i <= SIZE; i++)
+				{
+					L->insert(G->ptrs[i]);
+					G->ptrs[i]->setParent(L);
+				}
 			}
+
 			delete_entry(L->parent(), Midkey);
 			delete G;
 		}
@@ -246,10 +264,7 @@ bool BTree::delete_entry(BNode* L, int key)
 					edv = G->keys[SIZE - 1];
 					L->keys.insert(L->keys.begin(), edv);
 					delete_key(G, edv, 0);
-
 					replace(L->parent(), stv, edv);
-
-
 				}
 				else
 				{
@@ -259,6 +274,7 @@ bool BTree::delete_entry(BNode* L, int key)
 					BNode* ntr = G->ptrs[SIZE];
 					L->keys.insert(L->keys.begin(), Midkey);
 					L->ptrs.insert(L->ptrs.begin(), ntr);
+					ntr->setParent(L);
 					delete_key(G, edv, 1);
 
 					replace(L->parent(), Midkey, edv);
@@ -285,6 +301,7 @@ bool BTree::delete_entry(BNode* L, int key)
 					BNode* ntr = G->ptrs[0];
 					L->keys.push_back(Midkey);
 					L->ptrs.push_back(ntr);
+					ntr->setParent(L);
 
 					delete_key(G, edv, 0);
 
@@ -313,7 +330,7 @@ void BTree::printAll()
 	printf("Print B+ tree:\n");
 	std::deque<BNode*>hh;
 	hh.clear();
-	hh.push_back(root);
+	if (root != NULL)hh.push_back(root);
 	while (!hh.empty())
 	{
 		BNode* L = hh.front();
@@ -325,17 +342,25 @@ void BTree::printAll()
 			if (L->ptrs.size() != SIZE + 1)
 			{
 				printf("Error\n");
-				return;
+				exit(0);
 			}
 			for (int i = 0; i <= SIZE; i++)
 			{
 				hh.push_back(L->ptrs[i]);
 				if (L->ptrs[i]->parent() != L)
 				{
-					printf("Error printALL \n");
+					printf("Error printALL %d \n", i);
+
 					exit(0);
+					L->ptrs[i]->print();
+					L->ptrs[i]->parent()->print();
 				}
 			}
+
+		}
+		else
+		{
+
 
 		}
 		printf("\n");

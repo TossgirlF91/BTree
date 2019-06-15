@@ -20,9 +20,8 @@ public:
 	int midKey(BNode*);
 	int lastvalue();
 	void print();
-
+	bool contain(int);
 	// Node size
-	int size;
 
 	// If node is leaf
 	bool leaf;
@@ -30,7 +29,6 @@ public:
 	BNode* fa;
 	// Node keys
 	std::vector<int> keys;
-
 	// Node pointers
 	std::vector<BNode*>ptrs;
 	BNode* nex;
