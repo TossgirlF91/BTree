@@ -28,6 +28,7 @@ bool BTree::insert(int key, int id)
 			G->setLeaf();
 			G->nex = L->nex;
 			L->nex = G;
+			G->setParent(L->parent());
 			int SIZE = N;
 			int mid = SIZE / 2;
 			for (int i = 0; i < mid; i++)L->insert(Tmp->keys[i]);
@@ -48,9 +49,15 @@ BNode* BTree::find(BNode* node, int  key)
 
 	BNode* child = NULL;
 	int SIZE = node->getSize();
+
 	for (int i = 0; i < SIZE; i++)
-		if (key > node->keys[i]) { child = node->ptrs[i]; break; }
-	if (!child)child = node->ptrs[SIZE];
+		if (key < node->keys[i]) { child = node->ptrs[i]; break; }
+	if (child == NULL)
+	{
+		child = node->ptrs[SIZE];
+	}
+
+
 	return find(child, key);
 }
 bool BTree::insert_in_leaf(BNode* L, int key, int id)
@@ -61,16 +68,7 @@ bool BTree::insert_in_leaf(BNode* L, int key, int id)
 		if (L->keys[i] > key) { pos = i; break; }
 	if (pos == -1)pos = SIZE;
 	L->keys.insert(L->keys.begin() + pos, key);
-	/*Link* nid = new Link(id);
 
-	L->ids.insert(L->ids.begin() + pos, nid);
-	Link* pre = NULL, * nex = NULL;
-	if (pos == 0)pre = L->ids[0]->pre, nex = L->ids[0];
-	else pre = L->ids[pos - 1], nex = L->ids[pos - 1]->nex;
-	pre->nex = nid;
-	nex->pre = nid;
-	nid->pre = pre;
-	nid->nex = nex;*/
 	return true;
 }
 bool BTree::insert_in_parent(BNode* L, int key, BNode* G)
@@ -98,13 +96,19 @@ bool BTree::insert_in_parent(BNode* L, int key, BNode* G)
 	else
 	{
 		BNode* P = L->parent();
+
 		if (P->getSize() < N)
 		{
 			G->setParent(P);
-			int SIZE = P->ptrs.size();
+			int SIZE = P->getSize();
 			int pos = -1;
-			for (int i = 0; i < SIZE; i++)
+			for (int i = 0; i <= SIZE; i++)
 				if (P->ptrs[i] == L) { pos = i; break; }
+			if (pos == -1)
+			{
+				printf("Error insert parent find P->child==L\n");
+				exit(0);
+			}
 			P->ptrs.insert(P->ptrs.begin() + pos + 1, G);
 			P->keys.insert(P->keys.begin() + pos, key);
 		}
@@ -112,24 +116,39 @@ bool BTree::insert_in_parent(BNode* L, int key, BNode* G)
 		{
 			G->setParent(P);
 			BNode* Tmp = new BNode(P);
-			int SIZE = Tmp->ptrs.size();
+			int SIZE = Tmp->getSize();
 			int pos = -1;
-			for (int i = 0; i < SIZE; i++)
+			for (int i = 0; i <= SIZE; i++)
 				if (Tmp->ptrs[i] == L) { pos = i; break; }
+			if (pos == -1)
+			{
+				printf("Error insert parent find Tmp->child==L\n");
+				exit(0);
+			}
 			Tmp->ptrs.insert(Tmp->ptrs.begin() + pos + 1, G);
 			Tmp->keys.insert(Tmp->keys.begin() + pos, key);
-			P->clear();
-
+			SIZE++;
 			BNode* H = new BNode();
 			H->clear();
+			P->clear();
+			H->setParent(P->parent());
 
 			int mid = SIZE / 2;
 			for (int i = 0; i < mid; i++)P->insert(Tmp->keys[i]);
-			for (int i = 0; i <= mid; i++)P->insert(Tmp->ptrs[i]);
-			for (int i = mid; i < SIZE; i++)H->insert(Tmp->keys[i]);
-			for (int i = mid + 1; i <= SIZE; i++)H->insert(Tmp->ptrs[i]);
+			for (int i = 0; i <= mid; i++)
+			{
+				P->insert(Tmp->ptrs[i]);
+				Tmp->ptrs[i]->setParent(P);
+			}
 
-			int Minkey = H->keys[0];
+			int Minkey = Tmp->keys[mid];
+			for (int i = mid + 1; i < SIZE; i++)H->insert(Tmp->keys[i]);
+			for (int i = mid + 1; i <= SIZE; i++)
+			{
+				H->insert(Tmp->ptrs[i]);
+				Tmp->ptrs[i]->setParent(H);
+			}
+
 			insert_in_parent(P, Minkey, H);
 		}
 	}
@@ -302,7 +321,23 @@ void BTree::printAll()
 		int SIZE = L->getSize();
 		for (int i = 0; i < SIZE; i++)printf("%d ", L->keys[i]);
 		if (!L->isLeaf())
-			for (int i = 0; i <= SIZE; i++)hh.push_back(L->ptrs[i]);
+		{
+			if (L->ptrs.size() != SIZE + 1)
+			{
+				printf("Error\n");
+				return;
+			}
+			for (int i = 0; i <= SIZE; i++)
+			{
+				hh.push_back(L->ptrs[i]);
+				if (L->ptrs[i]->parent() != L)
+				{
+					printf("Error printALL \n");
+					exit(0);
+				}
+			}
+
+		}
 		printf("\n");
 	}
 }
